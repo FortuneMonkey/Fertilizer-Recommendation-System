@@ -1,0 +1,39 @@
+[theme]
+base = "light"
+primaryColor = "#17533A"
+backgroundColor = "#F4F6F3"
+secondaryBackgroundColor = "#FFFFFF"
+dataframeHeaderBackgroundColor = "#EEF2EF"
+textColor = "#16261E"
+borderColor = "#DDE5DF"
+font = "Inter"
+
+[[theme.fontFaces]]
+family = "Inter"
+url = "app/static/Inter-400.woff2"
+weight = 400
+
+[[theme.fontFaces]]
+family = "Inter"
+url = "app/static/Inter-500.woff2"
+weight = 500
+
+[[theme.fontFaces]]
+family = "Inter"
+url = "app/static/Inter-600.woff2"
+weight = 600
+
+[[theme.fontFaces]]
+family = "Inter"
+url = "app/static/Inter-700.woff2"
+weight = 700
+
+[server]
+headless = true
+enableStaticServing = true
+
+[client]
+toolbarMode = "minimal"
+
+[browser]
+gatherUsageStats = false
