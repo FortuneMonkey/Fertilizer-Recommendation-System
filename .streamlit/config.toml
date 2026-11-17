@@ -1,6 +1,6 @@
 [theme]
 base = "light"
-primaryColor = "#17533A"
+primaryColor = "#176344"
 backgroundColor = "#F4F6F3"
 secondaryBackgroundColor = "#FFFFFF"
 dataframeHeaderBackgroundColor = "#EEF2EF"
