@@ -75,6 +75,8 @@ CONFIG = {
         "mg":             "mg_soil",
         "p_avail":        "p_available",
         "sector":         "Sector",
+        "lat":            "lat",          # optional, used by the dashboard map
+        "lon":            "long",         # (swapped lat/long columns are fixed automatically)
     },
 }
 
@@ -273,7 +275,7 @@ def load_soil_database(cfg):
         if field == "comp_id":
             continue
         soil[field] = df[col].values if col in df.columns else np.nan
-    for field in ["ph", "organic_matter", "n_pct", "al", "cec", "k", "na", "ca", "mg", "p_avail"]:
+    for field in ["ph", "organic_matter", "n_pct", "al", "cec", "k", "na", "ca", "mg", "p_avail", "lat", "lon"]:
         soil[field] = pd.to_numeric(soil[field], errors="coerce")
 
     soil["comp_label"] = df[cols["comp_id"]].astype(str).str.strip().values   # code as written in the database

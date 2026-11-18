@@ -1,4 +1,5 @@
 """Database: browse the soil database and pick compartments for a plan."""
+import hashlib
 import io
 
 import numpy as np
@@ -6,7 +7,7 @@ import pandas as pd
 import streamlit as st
 
 import nav
-from core import data, session, ui
+from core import data, maps, session, ui
 
 COVERED, ALL = "Covered soil only", "All soils"
 
@@ -15,6 +16,34 @@ def _excel(table):
     buffer = io.BytesIO()
     table.to_excel(buffer, index=False, sheet_name="Soil database")
     return buffer.getvalue()
+
+
+def _map(view, selected, soil):
+    """Map of the compartments currently shown, coloured by the chosen field."""
+    with ui.card("map"):
+        title, colour, base = st.columns([3, 1.4, 1.6], vertical_alignment="bottom")
+        color_by = colour.selectbox("Colour by", list(maps.COLOR_BY), key="map_color")
+        basemap = base.segmented_control("Basemap", list(maps.BASEMAPS), default="Light", key="map_base") or "Light"
+        in_plan = st.session_state.plan["Comp ID"].tolist()
+        deck, legend, missing = maps.build(view, color_by, basemap, selected=selected, in_plan=in_plan, reference=soil)
+        mapped = len(view) - missing
+        title.markdown('<div class="item-t">Compartment map</div><div class="item-m" style="padding-bottom:0">'
+                       + ui.chip(f"{mapped:,} mapped", "")
+                       + (ui.chip(f"{missing:,} without coordinates", "warn") if missing else "")
+                       + "</div>", unsafe_allow_html=True)
+        if deck is None:
+            ui.empty_state("Nothing to map", "No compartment in the current filter has coordinates.")
+            return
+        # a new key whenever the set of compartments changes, so the map re-frames to fit them
+        frame = hashlib.md5(",".join(sorted(view["comp_label"])).encode()).hexdigest()[:10]
+        st.pydeck_chart(deck, height=500, width="stretch", key=f"map_{frame}")
+        rings = ""
+        if selected:
+            rings += f'<span class="legend-item"><span class="ring" style="border-color:{maps._hex(maps.SELECTED)}"></span>Selected</span>'
+        if any(c in set(view["comp_label"]) for c in in_plan):
+            rings += f'<span class="legend-item"><span class="ring" style="border-color:{maps._hex(maps.IN_PLAN)}"></span>In plan</span>'
+        st.markdown(f'<div class="legend"><span class="legend-title">{ui._text(color_by)}</span>{legend}'
+                    f'{"<span class=legend-sep></span>" + rings if rings else ""}</div>', unsafe_allow_html=True)
 
 
 def render():
@@ -62,14 +91,18 @@ def render():
     options = dict(hide_index=True, width="stretch", height=min(38 * len(table) + 40, 560), column_config=settings)
 
     selectable = scope == COVERED
+    map_area = st.container()          # filled after the table, so it can show the ticked rows
     st.markdown("<div style='height:.9rem'></div>", unsafe_allow_html=True)
     bar = st.container()
     if selectable:
         event = st.dataframe(table, on_select="rerun", selection_mode="multi-row", key="db_table", **options)
-        picked = list(event.selection.rows)
+        picked = [row for row in event.selection.rows if row < len(table)]
     else:
         st.dataframe(table, **options)
         picked = []
+
+    with map_area:
+        _map(view, table.loc[picked, "Comp ID"].tolist() if picked else [], soil)
 
     with bar:
         summary, add_selected, add_all, download = st.columns([3, 1.7, 1.5, 1.3], vertical_alignment="center")
